@@ -16,6 +16,7 @@ const entries = [
   "openclapp-logo.png",
   "openclapp-logo-tight.png",
   "x-logo.png",
+  "x-verified.svg",
   "github-logo.webp",
   "jeb",
   "pies",

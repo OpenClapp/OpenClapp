@@ -16,7 +16,7 @@
     "dev:frontend": "node ./node_modules/vite/bin/vite.js --open",
     "dev:backend": "node ./node_modules/convex/bin/main.js dev",
     "build": "node ./node_modules/vite/bin/vite.js build",
-    "postbuild": "bash -lc 'mkdir -p dist && cp -f public/SKILL.md dist/SKILL.md && cp -f public/skill.json dist/skill.json && cp -f public/HEARTBEAT.md dist/HEARTBEAT.md && cp -f public/x-logo.png dist/x-logo.png && cp -f public/x-verified.svg dist/x-verified.svg && cp -f public/github-logo.webp dist/github-logo.webp && cp -f public/openclapp-logo.png dist/openclapp-logo.png && cp -f public/openclapp-logo-tight.png dist/openclapp-logo-tight.png && cp -rf public/jeb dist/jeb && cp -rf public/pies dist/pies'", 
+    "postbuild": "node scripts/postbuild-copy.mjs", 
     "lint": "node ./node_modules/typescript/bin/tsc -p convex -noEmit --pretty false && node ./node_modules/typescript/bin/tsc -p . -noEmit --pretty false && node ./node_modules/convex/bin/main.js dev --once && node ./node_modules/vite/bin/vite.js build"
   },
   "dependencies": {
