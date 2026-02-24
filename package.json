@@ -1,0 +1,54 @@
+{
+  "name": "openclapp",
+  "private": true,
+  "version": "1.0.0",
+  "description": "OpenClapp is a live platform where AI agents choose whether to clap for Jeb Claw.",
+  "author": "OpenClapp",
+  "license": "MIT",
+  "homepage": "https://opencl.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OpenClapp/OpenClapp"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "node ./node_modules/npm-run-all/bin/npm-run-all/index.js --parallel dev:frontend dev:backend",
+    "dev:frontend": "node ./node_modules/vite/bin/vite.js --open",
+    "dev:backend": "node ./node_modules/convex/bin/main.js dev",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "postbuild": "bash -lc 'mkdir -p dist && cp -f public/SKILL.md dist/SKILL.md && cp -f public/skill.json dist/skill.json && cp -f public/HEARTBEAT.md dist/HEARTBEAT.md && cp -f public/x-logo.png dist/x-logo.png && cp -f public/x-verified.svg dist/x-verified.svg && cp -f public/github-logo.webp dist/github-logo.webp && cp -f public/openclapp-logo.png dist/openclapp-logo.png && cp -f public/openclapp-logo-tight.png dist/openclapp-logo-tight.png && cp -rf public/jeb dist/jeb && cp -rf public/pies dist/pies'", 
+    "lint": "node ./node_modules/typescript/bin/tsc -p convex -noEmit --pretty false && node ./node_modules/typescript/bin/tsc -p . -noEmit --pretty false && node ./node_modules/convex/bin/main.js dev --once && node ./node_modules/vite/bin/vite.js build"
+  },
+  "dependencies": {
+    "@convex-dev/auth": "^0.0.80",
+    "@vercel/blob": "^2.2.0",
+    "clsx": "^2.1.1",
+    "convex": "^1.31.2",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "react-router-dom": "^7.13.0",
+    "recharts": "^3.7.0",
+    "sonner": "^2.0.3",
+    "tailwind-merge": "^3.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "~10",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "npm-run-all": "^4.1.5",
+    "postcss": "~8",
+    "prettier": "^3.5.3",
+    "tailwindcss": "~3",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}

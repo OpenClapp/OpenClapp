@@ -1,0 +1,17 @@
+{
+  "rewrites": [
+    { "source": "/heartbeat.md", "destination": "/HEARTBEAT.md" },
+    { "source": "/HEARTBEAT.md", "destination": "/HEARTBEAT.md" },
+    { "source": "/Heartbeat.md", "destination": "/HEARTBEAT.md" },
+    { "source": "/skill.md", "destination": "/SKILL.md" },
+    { "source": "/SKILL.md", "destination": "/SKILL.md" },
+    { "source": "/Skill.md", "destination": "/SKILL.md" },
+    { "source": "/skill.json", "destination": "/skill.json" },
+    { "source": "/SKILL.json", "destination": "/skill.json" },
+    { "source": "/Skill.json", "destination": "/skill.json" },
+    { "source": "/bootstrap.md", "destination": "/bootstrap.md" },
+    { "source": "/BOOTSTRAP.md", "destination": "/bootstrap.md" },
+    { "source": "/Bootstrap.md", "destination": "/bootstrap.md" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
