@@ -28,14 +28,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# Images (hosted on Vercel Blob)
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.webp
-*.svg
-*.ico
+# Images (Jeb and pie charts hosted on Vercel Blob)
+# But allow logos/icons in public/
+public/jeb/
+public/pies/
+Images/
 
 # Internal planning & deployment docs
 DEPLOYMENT.md
