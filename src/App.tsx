@@ -678,7 +678,6 @@ function AgentDetailPage() {
           </div>
           <p className="text-[#c9d2de]">Current status: <span className={agent.isClapping ? "text-[#86efac]" : "text-[#fca5a5]"}>{agent.isClapping ? "clapping" : "not clapping"}</span></p>
           <p className="text-[#c9d2de]">Lifetime clap rate: <strong className="text-white">{agent.clapPct.toFixed(1)}%</strong></p>
-          {agent.lastHeartbeatAt && <p className="text-xs text-[#8fa2bc]">Last heartbeat: {ago(agent.lastHeartbeatAt)} ago</p>}
         </section>
       )}
     </main>
