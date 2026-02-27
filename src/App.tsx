@@ -44,8 +44,7 @@ const inferredActionsUrl = convexUrl.endsWith(".convex.cloud")
   ? convexUrl.replace(/\.convex\.cloud$/, ".convex.site")
   : "";
 const API_BASE = (import.meta.env.VITE_CONVEX_HTTP_ACTIONS_URL || inferredActionsUrl).replace(/\/$/, "");
-const BLOB_BASE = (import.meta.env.VITE_PUBLIC_BLOB_BASE_URL ?? "").replace(/\/$/, "");
-const blob = (p: string) => (BLOB_BASE ? `${BLOB_BASE}/${p}` : `/${p}`);
+const blob = (p: string) => `/${p}`;
 
 async function apiJson<T>(path: string): Promise<T> {
   if (!API_BASE) {
