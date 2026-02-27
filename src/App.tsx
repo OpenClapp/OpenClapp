@@ -395,7 +395,8 @@ function HomePage() {
   const clappingNow = stats?.clappingNow ?? 0;
   const tierPct = totalAgents < 50 ? Math.min(pct, 59.9) : pct;
   const bobSec = totalAgents >= 50 && pct >= 90 ? 0.55 : tierPct < 40 ? 1.4 : tierPct < 60 ? 1.2 : tierPct < 80 ? 1.0 : 0.8;
-  const active = totalAgents > 0 && totalAgents < 100 ? clappingNow : Math.round(pct);
+  const activeRaw = totalAgents < 100 ? clappingNow : Math.round(pct);
+  const active = Math.max(0, Math.min(activeRaw, MOBILE_LOBSTER_COUNT));
   const left = Math.floor(active / 2);
   const right = active - left;
 
