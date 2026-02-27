@@ -399,6 +399,8 @@ function HomePage() {
   const active = Math.max(0, Math.min(activeRaw, MOBILE_LOBSTER_COUNT));
   const left = Math.floor(active / 2);
   const right = active - left;
+  const exactCountMode = totalAgents < 100;
+  const stripActive = exactCountMode ? 0 : active;
 
   const jeb = (() => {
     if (!stats) return null;
@@ -443,9 +445,9 @@ function HomePage() {
           <div className="hidden md:grid grid-cols-[1fr_auto_1fr] gap-1 items-center">
             <ShellWall active={left} side="l" bobSec={bobSec} />
             <div className="flex flex-col items-center justify-center gap-0">
-              <ShellStrip active={active} offset={0} bobSec={bobSec} />
+              <ShellStrip active={stripActive} offset={0} bobSec={bobSec} />
               {jeb ? <img src={jeb} alt="Jeb Claw" className={`w-80 md:w-[26rem] rounded-xl border border-[#313b49] shadow-lg ${isUltraTopJebTier ? "animate-jeb-vibrate-max" : isTopJebTier ? "animate-jeb-vibrate" : ""}`} /> : <div className={`w-80 md:w-[26rem] h-[380px] rounded-xl border border-[#313b49] bg-[#0f1520] animate-pulse ${isUltraTopJebTier ? "animate-jeb-vibrate-max" : isTopJebTier ? "animate-jeb-vibrate" : ""}`} />}
-              <ShellStrip active={active} offset={20} bobSec={bobSec} />
+              <ShellStrip active={stripActive} offset={20} bobSec={bobSec} />
             </div>
             <ShellWall active={right} side="r" bobSec={bobSec} />
           </div>
