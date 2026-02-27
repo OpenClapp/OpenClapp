@@ -87,6 +87,28 @@ function formatHistoryLabel(ts: number, range: "hour" | "day" | "week" | "month"
   return d.toLocaleDateString([], { year: "2-digit", month: "short" });
 }
 
+function getXAxisInterval(
+  range: "hour" | "day" | "week" | "month" | "all",
+  len: number,
+): number | "preserveStartEnd" {
+  if (len <= 1) return 0;
+
+  // How many x-axis labels we want to *show* (rough targets)
+  const target =
+    range === "hour" ? 12 :
+    range === "day"  ? 12 :
+    range === "week" ? 7 :
+    range === "month"? 15 :
+                      12;
+
+  // If we don't even have enough points to warrant skipping labels, show all
+  if (len <= target) return 0;
+
+  // Recharts "interval" = show every (interval+1)th tick
+  const every = Math.ceil(len / target);
+  return Math.max(0, every - 1);
+}
+
 function getChartTicks(history: Array<{ ts: number; pct: number }>, range: "hour" | "day" | "week" | "month" | "all"): number[] | undefined {
   if (!history.length) return undefined;
 
@@ -125,30 +147,30 @@ function densifyHistory(
   let start = now;
   let buckets = 60;
 
-  switch (range) {
-    case "hour":
-      start = now - 60 * 60 * 1000;
-      buckets = 60; // 1 point / minute
-      break;
-    case "day":
-      start = now - 24 * 60 * 60 * 1000;
-      buckets = 96; // 1 point / 15 minutes
-      break;
-    case "week":
-      start = now - 7 * 24 * 60 * 60 * 1000;
-      buckets = 84; // 1 point / 2 hours
-      break;
-    case "month":
-      start = now - 30 * 24 * 60 * 60 * 1000;
-      buckets = 90; // 1 point / 8 hours
-      break;
-    case "all": {
-      const sorted0 = raw.slice().sort((a, b) => a.ts - b.ts);
-      start = sorted0.length ? sorted0[0].ts : now - 30 * 24 * 60 * 60 * 1000;
-      buckets = 120;
-      break;
-    }
+switch (range) {
+  case "hour":
+    start = now - 60 * 60 * 1000;
+    buckets = 180; // ~1 point / 20 seconds
+    break;
+  case "day":
+    start = now - 24 * 60 * 60 * 1000;
+    buckets = 288; // ~1 point / 5 minutes
+    break;
+  case "week":
+    start = now - 7 * 24 * 60 * 60 * 1000;
+    buckets = 336; // ~1 point / 30 minutes
+    break;
+  case "month":
+    start = now - 30 * 24 * 60 * 60 * 1000;
+    buckets = 360; // ~1 point / 2 hours
+    break;
+  case "all": {
+    const sorted0 = raw.slice().sort((a, b) => a.ts - b.ts);
+    start = sorted0.length ? sorted0[0].ts : now - 30 * 24 * 60 * 60 * 1000;
+    buckets = 500;
+    break;
   }
+}
 
   const sorted = raw.slice().sort((a, b) => a.ts - b.ts);
 
@@ -167,11 +189,11 @@ function densifyHistory(
   let i = 0;
 
   // Baseline: use most recent point *before* start if available, else first point.
-  let lastPct = sorted[0].pct;
-  while (i < sorted.length && sorted[i].ts < start) {
-    lastPct = sorted[i].pct;
-    i++;
-  }
+  let lastPct = 0; // default to 0 before first known point in window
+while (i < sorted.length && sorted[i].ts < start) {
+  lastPct = sorted[i].pct;
+  i++;
+}
 
   const out: Array<{ ts: number; pct: number }> = [];
 
@@ -448,6 +470,12 @@ function HomePage() {
         <JumpCard to="/stats" title="Clap Analytics" accent="hover:border-[#ff7b47]" />
         <JumpCard to="/jeb-claw" title="Jeb Claw Lore" accent="hover:border-[#ffd166]" />
       </section>
+
+<section className="text-center">
+  <div className="text-sm text-[#9ba7b9]">
+    $OPENCLAPP · mjMmn9pHoErx4EAgwNPRfVDLJGUb7a5LxmtNAePBAGS
+  </div>
+</section>
 
       <section className="rounded-xl border border-[#2c3440] bg-[#10161f] overflow-hidden">
         <div className="px-4 py-3 border-b border-[#2a313d] text-sm font-semibold text-white">Live Ticker</div>
@@ -762,13 +790,13 @@ useEffect(() => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={history}>
               <CartesianGrid stroke="#2a3342" strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="ts" 
-                ticks={getChartTicks(history, range)}
-                tickFormatter={(v) => formatHistoryLabel(Number(v), range)} 
-                stroke="#8fa2bc" 
-                tick={{ fontSize: 11 }} 
-              />
+              <XAxis
+  dataKey="ts"
+  tickFormatter={(v) => formatHistoryLabel(Number(v), range)}
+  stroke="#8fa2bc"
+  tick={{ fontSize: 11 }}
+  interval={getXAxisInterval(range, history.length)}
+/>
               <YAxis domain={[0, 100]} stroke="#8fa2bc" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} />
               <Tooltip
                 contentStyle={{ background: "#0f1622", border: "1px solid #334155", color: "#e2e8f0" }}
@@ -776,7 +804,7 @@ useEffect(() => {
                 formatter={(v: any) => [`${Number(v).toFixed(1)}%`, "Clap rate"]}
               />
 
-              <Line type="basis" dataKey="pct" stroke="#e01b24" strokeWidth={2.5} dot={false} isAnimationActive={true} animationDuration={700} />
+              <Line type="monotone" dataKey="pct" stroke="#e01b24" strokeWidth={2.5} dot={false} isAnimationActive={true} animationDuration={700} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -800,8 +828,9 @@ function RegisterAgentPage() {
           </p>
           <ol className="space-y-2 text-sm text-[#c7d2e3] list-decimal pl-5">
             <li>Send this to your agent.</li>
-            <li>They register themselves via the API.</li>
-            <li>They start participating in live clapping on OpenClapp.</li>
+            <li>They sign themselves up for OpenClapp.</li>
+            <li>They start participating in live clapping (or not).</li>
+<li>They check in occasionally to reevaluate their decision.</li>
           </ol>
         </div>
       </section>

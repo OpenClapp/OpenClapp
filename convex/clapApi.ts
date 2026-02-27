@@ -245,48 +245,115 @@ export const getAgentById = query({
 
 
 export const getClapRateHistory = query({
-  args: { range: v.union(v.literal("hour"), v.literal("day"), v.literal("week"), v.literal("month"), v.literal("all")) },
+  args: {
+    range: v.union(
+      v.literal("hour"),
+      v.literal("day"),
+      v.literal("week"),
+      v.literal("month"),
+      v.literal("all"),
+    ),
+  },
   handler: async (ctx, { range }) => {
     const now = Date.now();
-    const totalAgents = (await ctx.db.query("agents").collect()).length;
-    const agentsNow = await ctx.db.query("agents").collect();
-    const currentClappingNow = agentsNow.filter((a) => a.isClapping).length;
 
     const windows: Record<string, number> = {
       hour: 60 * 60 * 1000,
       day: 24 * 60 * 60 * 1000,
       week: 7 * 24 * 60 * 60 * 1000,
       month: 30 * 24 * 60 * 60 * 1000,
-      all: 3650 * 24 * 60 * 60 * 1000,
+      all: 3650 * 24 * 60 * 60 * 1000, // fallback, overridden below
     };
 
-    const lookbackMs = windows[range];
-    const fromTs = now - lookbackMs;
+    // Load agents first (we need this for denominators + current clapping count)
+    const agents = await ctx.db.query("agents").collect();
+    const createdAts = agents.map((a) => a.createdAt).sort((a, b) => a - b);
 
-    const events = await ctx.db.query("clapEvents").withIndex("by_created_at").order("desc").take(5000);
-    const filtered = events.filter((e) => e.createdAt >= fromTs);
+    // Denominator at a given time: number of agents that existed at that time
+    const totalAgentsAt = (ts: number) => {
+      let lo = 0;
+      let hi = createdAts.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (createdAts[mid] <= ts) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo;
+    };
 
-    let running = currentClappingNow;
-    const reversePoints: Array<{ ts: number; clappingNow: number; pct: number }> = [
-      { ts: now, clappingNow: running, pct: totalAgents ? (running / totalAgents) * 100 : 0 },
-    ];
+    let fromTs = now - windows[range];
 
-    for (const e of filtered) {
-      running += e.type === "started" ? -1 : 1;
-      running = Math.max(0, Math.min(totalAgents, running));
-      reversePoints.push({
-        ts: e.createdAt,
-        clappingNow: running,
-        pct: totalAgents ? (running / totalAgents) * 100 : 0,
-      });
+    // For "all", start at the earliest real data point we have
+    if (range === "all") {
+      const earliestEvent = await ctx.db
+        .query("clapEvents")
+        .withIndex("by_created_at")
+        .order("asc")
+        .take(1);
+
+      if (earliestEvent.length) {
+        fromTs = earliestEvent[0].createdAt;
+      } else {
+        // No events yet — start at earliest agent creation time (or now if none)
+        fromTs = createdAts.length ? createdAts[0] : now;
+      }
     }
 
-    const points = reversePoints.reverse();
-    const maxPoints = range === "hour" ? 120 : range === "day" ? 200 : 260;
+    // Current clapping count at "now"
+    const currentClappingNow = agents.filter((a) => a.isClapping).length;
+
+    // Pull enough events; we'll filter to the window
+    const eventsDesc = await ctx.db
+      .query("clapEvents")
+      .withIndex("by_created_at")
+      .order("desc")
+      .take(20000);
+
+    const windowEventsDesc = eventsDesc.filter((e) => e.createdAt >= fromTs);
+
+    // Compute clapping count at fromTs by walking backwards from "now"
+    let runningAtFrom = currentClappingNow;
+    for (const e of windowEventsDesc) {
+      runningAtFrom += e.type === "started" ? -1 : 1;
+      runningAtFrom = Math.max(0, runningAtFrom);
+    }
+
+    // Build timeline forward from fromTs using events ascending
+    const windowEventsAsc = windowEventsDesc.slice().sort((a, b) => a.createdAt - b.createdAt);
+
+    let running = runningAtFrom;
+    const points: Array<{ ts: number; clappingNow: number; pct: number }> = [];
+
+    const pushPoint = (ts: number, clappingNow: number) => {
+      const denom = totalAgentsAt(ts);
+      const pct = denom > 0 ? (clappingNow / denom) * 100 : 0;
+      points.push({ ts, clappingNow, pct });
+    };
+
+    // Baseline point at window start
+    pushPoint(fromTs, running);
+
+    for (const e of windowEventsAsc) {
+      running += e.type === "started" ? 1 : -1;
+      running = Math.max(0, running);
+      pushPoint(e.createdAt, running);
+    }
+
+    // End point at now
+    pushPoint(now, currentClappingNow);
+
+    // Downsample
+    const maxPoints =
+      range === "hour" ? 360 :
+      range === "day" ? 576 :
+      range === "week" ? 672 :
+      range === "month" ? 720 :
+      900;
+
     const stride = Math.max(1, Math.ceil(points.length / maxPoints));
     const sampled = points.filter((_, i) => i % stride === 0 || i === points.length - 1);
 
-    return { range, totalAgents, points: sampled };
+    return { range, points: sampled, totalAgentsNow: createdAts.length };
   },
 });
 
