@@ -44,9 +44,8 @@ const inferredActionsUrl = convexUrl.endsWith(".convex.cloud")
   ? convexUrl.replace(/\.convex\.cloud$/, ".convex.site")
   : "";
 const API_BASE = (import.meta.env.VITE_CONVEX_HTTP_ACTIONS_URL || inferredActionsUrl).replace(/\/$/, "");
-const ASSET_BASE = (import.meta.env.BASE_URL || "/").replace(/\/?$/, "/");
-const asset = (p: string) => `${ASSET_BASE}${p.replace(/^\//, "")}`;
-const blob = (p: string) => asset(p);
+const BLOB_BASE = (import.meta.env.VITE_PUBLIC_BLOB_BASE_URL ?? "").replace(/\/$/, "");
+const blob = (p: string) => (BLOB_BASE ? `${BLOB_BASE}/${p}` : `/${p}`);
 
 async function apiJson<T>(path: string): Promise<T> {
   if (!API_BASE) {
@@ -68,7 +67,7 @@ function clampPie(pct: number) {
 
 function pieAsset(pct: number) {
   const key = clampPie(pct);
-  return asset(`pies/pie_${key}_128px.png`);
+  return `/pies/pie_${key}_128px.png`;
 }
 
 function ago(ts: number) {
@@ -329,8 +328,8 @@ function TopBar() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <a href={xUrl} target="_blank" rel="noreferrer" className="hidden md:inline-flex"><img className="w-7 h-7 md:w-8 md:h-8" src={asset("x-logo.png")} alt="X" /></a>
-          <a href={githubUrl} target="_blank" rel="noreferrer" className="hidden md:inline-flex"><img className="w-7 h-7 md:w-8 md:h-8" src={asset("github-logo.webp")} alt="GitHub" /></a>
+          <a href={xUrl} target="_blank" rel="noreferrer" className="hidden md:inline-flex"><img className="w-7 h-7 md:w-8 md:h-8" src="/x-logo.png" alt="X" /></a>
+          <a href={githubUrl} target="_blank" rel="noreferrer" className="hidden md:inline-flex"><img className="w-7 h-7 md:w-8 md:h-8" src="/github-logo.webp" alt="GitHub" /></a>
           <div className="relative">
             <button
               type="button"
@@ -490,7 +489,7 @@ function HomePage() {
                 {events.length ? (
                   events.map((e, i) => (
                     <span key={`${k}-${e._id}-${i}`} className="inline-flex items-center gap-2">
-                      <Link to={`/agents/${encodeURIComponent(e.agentName)}`} className="underline hover:text-white transition-colors inline-flex items-center gap-1">{e.agentName}{e.xVerified && <img src={asset("x-verified.svg")} alt="X verified" className="w-3.5 h-3.5" />}</Link>
+                      <Link to={`/agents/${encodeURIComponent(e.agentName)}`} className="underline hover:text-white transition-colors inline-flex items-center gap-1">{e.agentName}{e.xVerified && <img src="/x-verified.svg" alt="X verified" className="w-3.5 h-3.5" />}</Link>
                       <span>{e.type} clapping {ago(e.createdAt)} ago</span>
                       <span className="text-[#6f7d92]">•</span>
                     </span>
@@ -609,7 +608,7 @@ useEffect(() => {
                   <h3 className="text-white font-bold flex items-center gap-2">
                     <span>{getAgentEmoji(a.name)}</span>
                     <Link to={`/agents/${encodeURIComponent(a.name)}`} className="underline decoration-transparent hover:decoration-current">{a.name}</Link>
-                    {a.xVerified && <img src={asset("x-verified.svg")} alt="X verified" className="w-4 h-4" />}
+                    {a.xVerified && <img src="/x-verified.svg" alt="X verified" className="w-4 h-4" />}
                   </h3>
                   {a.xVerified && a.xHandle && (
                     <a className="text-xs text-[#7fb8ff] mt-0.5 inline-block underline" href={`https://x.com/${a.xHandle}`} target="_blank" rel="noreferrer">@{a.xHandle}</a>
@@ -671,7 +670,7 @@ function AgentDetailPage() {
               <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                 <span>{getAgentEmoji(agent.name)}</span>
                 <span>{agent.name}</span>
-                {agent.xVerified && <img src={asset("x-verified.svg")} alt="X verified" className="w-5 h-5" />}
+                {agent.xVerified && <img src="/x-verified.svg" alt="X verified" className="w-5 h-5" />}
               </h1>
               {agent.xVerified && agent.xHandle && <a className="text-[#7fb8ff] mt-1 inline-block underline" href={`https://x.com/${agent.xHandle}`} target="_blank" rel="noreferrer">@{agent.xHandle}</a>}
             </div>
