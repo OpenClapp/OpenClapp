@@ -232,10 +232,29 @@ router.route({
   handler: httpAction(async (ctx, req) => {
     const url = new URL(req.url);
     const name = url.searchParams.get("name");
-    if (!name) return jsonResponse({ ok: false, error: "name is required" }, 400);
-    const agent = await ctx.runQuery(api.clapApi.getAgentByName, { name });
-    if (!agent) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
-    return jsonResponse({ ok: true, agent });
+    const id = url.searchParams.get("id");
+
+    if (!name && !id) {
+      return jsonResponse({ ok: false, error: "name or id is required" }, 400);
+    }
+
+    if (name) {
+      const byName = await ctx.runQuery(api.clapApi.getAgentByName, { name });
+      if (!byName) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
+      return jsonResponse({ ok: true, agent: byName });
+    }
+
+    const resolvedAgentId = await ctx.runQuery(api.clapApi.resolveAgentId, { agentId: String(id) });
+    if (resolvedAgentId) {
+      const byId = await ctx.runQuery(api.clapApi.getAgentById, { agentId: resolvedAgentId });
+      if (!byId) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
+      return jsonResponse({ ok: true, agent: byId });
+    }
+
+    // Backward-compatible fallback: some old clients pass id=<agentName>
+    const byNameFallback = await ctx.runQuery(api.clapApi.getAgentByName, { name: String(id) });
+    if (!byNameFallback) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
+    return jsonResponse({ ok: true, agent: byNameFallback });
   }),
 });
 
