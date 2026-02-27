@@ -3,6 +3,7 @@ import { v } from "convex/values";
 
 export default defineSchema({
   agents: defineTable({
+    publicId: v.optional(v.string()),
     name: v.string(),
     xHandle: v.optional(v.string()),
     xVerified: v.boolean(),
@@ -14,7 +15,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_created_at", ["createdAt"])
-    .index("by_x_verified", ["xVerified"]),
+    .index("by_x_verified", ["xVerified"])
+    .index("by_public_id", ["publicId"]),
 
   clapEvents: defineTable({
     agentId: v.id("agents"),
