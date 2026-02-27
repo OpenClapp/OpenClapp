@@ -20,7 +20,7 @@ type Stats = {
 };
 
 type Agent = {
-  _id: string;
+  _id?: string;
   name: string;
   xHandle?: string;
   xVerified: boolean;
@@ -489,7 +489,7 @@ function HomePage() {
                 {events.length ? (
                   events.map((e, i) => (
                     <span key={`${k}-${e._id}-${i}`} className="inline-flex items-center gap-2">
-                      <Link to={e.agentId ? `/agents/${e.agentId}` : "/agents"} className="underline hover:text-white transition-colors inline-flex items-center gap-1">{e.agentName}{e.xVerified && <img src="/x-verified.svg" alt="X verified" className="w-3.5 h-3.5" />}</Link>
+                      <Link to={`/agents/${encodeURIComponent(e.agentName)}`} className="underline hover:text-white transition-colors inline-flex items-center gap-1">{e.agentName}{e.xVerified && <img src="/x-verified.svg" alt="X verified" className="w-3.5 h-3.5" />}</Link>
                       <span>{e.type} clapping {ago(e.createdAt)} ago</span>
                       <span className="text-[#6f7d92]">•</span>
                     </span>
@@ -602,12 +602,12 @@ useEffect(() => {
         {visibleItems.map((a) => {
           const pie = clampPie(a.clapPct);
           return (
-            <article key={a._id} className="rounded-xl border border-[#313a47] bg-[#121925] p-4 hover:border-[#434f60] hover:-translate-y-0.5 transition-all min-h-[132px]">
+            <article key={a.name} className="rounded-xl border border-[#313a47] bg-[#121925] p-4 hover:border-[#434f60] hover:-translate-y-0.5 transition-all min-h-[132px]">
               <div className="flex justify-between gap-2">
                 <div>
                   <h3 className="text-white font-bold flex items-center gap-2">
                     <span>{getAgentEmoji(a.name)}</span>
-                    <Link to={`/agents/${a._id}`} className="underline decoration-transparent hover:decoration-current">{a.name}</Link>
+                    <Link to={`/agents/${encodeURIComponent(a.name)}`} className="underline decoration-transparent hover:decoration-current">{a.name}</Link>
                     {a.xVerified && <img src="/x-verified.svg" alt="X verified" className="w-4 h-4" />}
                   </h3>
                   {a.xVerified && a.xHandle && (
@@ -641,21 +641,21 @@ useEffect(() => {
 
 
 function AgentDetailPage() {
-  const { id } = useParams();
+  const { name } = useParams();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [error, setError] = useState("");
   const [range, setRange] = useState<"hour" | "day" | "week" | "month" | "all">("day");
   const [history, setHistory] = useState<Array<{ ts: number; pct: number }>>([]);
 
   useEffect(() => {
-    if (!id) return;
-    apiJson<{ agent: Agent }>(`/api/agent?id=${encodeURIComponent(id)}`)
+    if (!name) return;
+    apiJson<{ agent: Agent }>(`/api/agent?name=${encodeURIComponent(name)}`)
       .then((d) => {
         setError("");
         setAgent(d.agent);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load agent"));
-  }, [id]);
+  }, [name]);
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-4">
@@ -914,7 +914,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/agents" element={<AgentsPage />} />
-          <Route path="/agents/:id" element={<AgentDetailPage />} />
+          <Route path="/agents/:name" element={<AgentDetailPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/jeb-claw" element={<JebClawPage />} />
           <Route path="/register-agent" element={<RegisterAgentPage />} />

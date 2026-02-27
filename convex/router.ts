@@ -63,11 +63,16 @@ router.route({
   handler: httpAction(async (ctx, req) => {
     const body = await readJson(req);
     if (!body?.name) return jsonResponse({ ok: false, error: "name is required" }, 400);
-    const result = await ctx.runMutation(api.clapApi.registerAgent, {
-      name: String(body.name),
-      xHandle: body.xHandle ? String(body.xHandle) : undefined,
-    });
-    return jsonResponse({ ok: true, ...result });
+    try {
+      const result = await ctx.runMutation(api.clapApi.registerAgent, {
+        name: String(body.name),
+        xHandle: body.xHandle ? String(body.xHandle) : undefined,
+      });
+      return jsonResponse({ ok: true, ...result });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to register agent";
+      return jsonResponse({ ok: false, error: message }, 400);
+    }
   }),
 });
 
@@ -79,8 +84,10 @@ router.route({
     if (!body?.agentId || typeof body.clapping !== "boolean") {
       return jsonResponse({ ok: false, error: "agentId and clapping are required" }, 400);
     }
+    const resolvedAgentId = await ctx.runQuery(api.clapApi.resolveAgentId, { agentId: String(body.agentId) });
+    if (!resolvedAgentId) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
     const result = await ctx.runMutation(api.clapApi.setClappingState, {
-      agentId: body.agentId,
+      agentId: resolvedAgentId,
       clapping: body.clapping,
     });
     return jsonResponse(result);
@@ -93,8 +100,10 @@ router.route({
   handler: httpAction(async (ctx, req) => {
     const body = await readJson(req);
     if (!body?.agentId) return jsonResponse({ ok: false, error: "agentId is required" }, 400);
+    const resolvedAgentId = await ctx.runQuery(api.clapApi.resolveAgentId, { agentId: String(body.agentId) });
+    if (!resolvedAgentId) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
     const result = await ctx.runMutation(api.clapApi.heartbeat, {
-      agentId: body.agentId,
+      agentId: resolvedAgentId,
       clapping: typeof body.clapping === "boolean" ? body.clapping : undefined,
     });
     return jsonResponse(result);
@@ -130,6 +139,9 @@ router.route({
       return jsonResponse({ ok: false, error: "agentId and xHandle are required" }, 400);
     }
 
+    const resolvedAgentId = await ctx.runQuery(api.clapApi.resolveAgentId, { agentId: String(body.agentId) });
+    if (!resolvedAgentId) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
+
     const xHandle = normalizeXHandle(String(body.xHandle));
     if (!xHandle.match(/^[a-z0-9_]{1,15}$/)) {
       return jsonResponse({ ok: false, error: "Invalid X handle format" }, 400);
@@ -139,14 +151,14 @@ router.route({
     const expiresAt = Date.now() + Math.max(1, ttlMin) * 60_000;
 
     try {
-      const agent = await ctx.runQuery(api.clapApi.getAgentById, { agentId: body.agentId });
+      const agent = await ctx.runQuery(api.clapApi.getAgentById, { agentId: resolvedAgentId });
       if (!agent) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
 
       const code = randomChallengeCode();
       const challengeText = `I'm claiming my agent ${agent.name} on @OpenClapp Verification CLAPP-${code}`;
 
       const result = await ctx.runMutation(api.clapApi.createXVerificationChallenge, {
-        agentId: body.agentId,
+        agentId: resolvedAgentId,
         xHandle,
         challengeText,
         expiresAt,
@@ -219,9 +231,9 @@ router.route({
   method: "GET",
   handler: httpAction(async (ctx, req) => {
     const url = new URL(req.url);
-    const agentId = url.searchParams.get("id");
-    if (!agentId) return jsonResponse({ ok: false, error: "id is required" }, 400);
-    const agent = await ctx.runQuery(api.clapApi.getAgentById, { agentId: agentId as any });
+    const name = url.searchParams.get("name");
+    if (!name) return jsonResponse({ ok: false, error: "name is required" }, 400);
+    const agent = await ctx.runQuery(api.clapApi.getAgentByName, { name });
     if (!agent) return jsonResponse({ ok: false, error: "Agent not found" }, 404);
     return jsonResponse({ ok: true, agent });
   }),

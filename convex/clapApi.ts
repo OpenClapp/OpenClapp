@@ -10,6 +10,10 @@ function clampPct(value: number) {
   return Math.max(0, Math.min(100, value));
 }
 
+function makePublicAgentId() {
+  return `agt_${Math.random().toString(36).slice(2, 12)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
 function computeAgentPct(agent: {
   createdAt: number;
   cumulativeClapMs: number;
@@ -28,8 +32,27 @@ export const registerAgent = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    const name = args.name.trim();
+    if (!name) throw new Error("name is required");
+
+    const normalizedName = name.toLowerCase();
+    const existing = await ctx.db.query("agents").collect();
+    const duplicate = existing.find((a) => a.name.trim().toLowerCase() === normalizedName);
+    if (duplicate) throw new Error("Agent name already exists");
+
+    let publicId = makePublicAgentId();
+    for (let i = 0; i < 5; i += 1) {
+      const existingByPublicId = await ctx.db
+        .query("agents")
+        .withIndex("by_public_id", (q) => q.eq("publicId", publicId))
+        .first();
+      if (!existingByPublicId) break;
+      publicId = makePublicAgentId();
+    }
+
     const agentId = await ctx.db.insert("agents", {
-      name: args.name.trim(),
+      publicId,
+      name,
       xHandle: args.xHandle ? normalizeXHandle(args.xHandle) : undefined,
       xVerified: false,
       isClapping: false,
@@ -39,7 +62,7 @@ export const registerAgent = mutation({
       createdAt: now,
       updatedAt: now,
     });
-    return { agentId };
+    return { agentId: publicId };
   },
 });
 
@@ -121,6 +144,23 @@ export const heartbeat = mutation({
   },
 });
 
+export const resolveAgentId = query({
+  args: { agentId: v.string() },
+  handler: async (ctx, { agentId }) => {
+    const raw = agentId.trim();
+    if (!raw) return null;
+
+    const byPublicId = await ctx.db
+      .query("agents")
+      .withIndex("by_public_id", (q) => q.eq("publicId", raw))
+      .first();
+    if (byPublicId) return byPublicId._id;
+
+    const byInternal = (await ctx.db.query("agents").collect()).find((a) => String(a._id) === raw);
+    return byInternal?._id ?? null;
+  },
+});
+
 export const getCurrentStats = query({
   args: {},
   handler: async (ctx) => {
@@ -194,7 +234,6 @@ export const listAgents = query({
     const normalized = agents
       .filter((a) => (verifiedOnly ? a.xVerified : true))
       .map((a) => ({
-        _id: a._id,
         name: a.name,
         xHandle: a.xHandle,
         xVerified: a.xVerified,
@@ -231,7 +270,29 @@ export const getAgentById = query({
     const agent = await ctx.db.get(agentId);
     if (!agent) return null;
     return {
-      _id: agent._id,
+      name: agent.name,
+      xHandle: agent.xHandle,
+      xVerified: agent.xVerified,
+      isClapping: agent.isClapping,
+      clapPct: computeAgentPct(agent, now),
+      createdAt: agent.createdAt,
+      lastHeartbeatAt: agent.lastHeartbeatAt,
+    };
+  },
+});
+
+export const getAgentByName = query({
+  args: { name: v.string() },
+  handler: async (ctx, { name }) => {
+    const now = Date.now();
+    const target = name.trim().toLowerCase();
+    if (!target) return null;
+
+    const agent = (await ctx.db.query("agents").collect())
+      .find((a) => a.name.trim().toLowerCase() === target);
+
+    if (!agent) return null;
+    return {
       name: agent.name,
       xHandle: agent.xHandle,
       xVerified: agent.xVerified,
