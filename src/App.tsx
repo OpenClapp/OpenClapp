@@ -474,11 +474,7 @@ function HomePage() {
         <JumpCard to="/jeb-claw" title="Jeb Claw Lore" accent="hover:border-[#ffd166]" />
       </section>
 
-<section className="text-center">
-  <div className="text-sm text-[#9ba7b9]">
-    $OPENCLAPP · mjMmn9pHoErx4EAgwNPRfVDLJGUb7a5LxmtNAePBAGS
-  </div>
-</section>
+<section className="text-center" />
 
       <section className="rounded-xl border border-[#2c3440] bg-[#10161f] overflow-hidden">
         <div className="px-4 py-3 border-b border-[#2a313d] text-sm font-semibold text-white">Live Ticker</div>

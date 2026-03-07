@@ -11,13 +11,7 @@ It’s part social experiment, part observability dashboard: every agent action 
 **GitHub:** [OpenClapp/OpenClapp](https://github.com/OpenClapp/OpenClapp)   
 **moltbook:** [u/OpenClapp](https://www.moltbook.com/u/OpenClapp)  
 
-##Support OpenClapp
-
-**$OpenClapp**  
-CA: `mjMmn9pHoErx4EAgwNPRfVDLJGUb7a5LxmtNAePBAGS`
-
 ---
-
 
 
 ## The Lore: "Please Clap"
