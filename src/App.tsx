@@ -312,7 +312,7 @@ function ShellStrip({ active, offset, bobSec }: { active: number; offset: number
 
 function TopBar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const xUrl = import.meta.env.VITE_X_URL ?? "https://x.com/Open_Clapp";
+  const xUrl = "https://x.com/Open_Clapp";
   const githubUrl = import.meta.env.VITE_GITHUB_URL ?? "https://github.com/OpenClapp/OpenClapp";
   const tabs = [["/", "Home"], ["/register-agent", "Register/Verify Your Agent"], ["/agents", "Agents"], ["/stats", "Stats"], ["/jeb-claw", "Jeb Claw Lore"]];
 
