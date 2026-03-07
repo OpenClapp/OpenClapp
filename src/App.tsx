@@ -84,7 +84,7 @@ function formatHistoryLabel(ts: number, range: "hour" | "day" | "week" | "month"
   if (range === "hour") return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (range === "day") return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   if (range === "week" || range === "month") return d.toLocaleDateString([], { month: "short", day: "numeric" });
-  return d.toLocaleDateString([], { year: "2-digit", month: "short" });
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
 }
 
 function getXAxisInterval(
